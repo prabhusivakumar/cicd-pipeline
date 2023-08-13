@@ -9,6 +9,11 @@ ____
 ## Dependencies
 The application has no dependencies.
 
+## Assumptions
+I've assumed that the application currently runs on a Kubernetes cluster.
+The app runs with 2 replica pods using a deployment manifest.
+Connectivity is established by a LoadBalancer Service, which creates a Load Balancer in the corresponding cloud setup.
+
 Problem 1
 ================
 Use any tool to be able to create a repeatable and predictable product deployment.
@@ -18,11 +23,6 @@ ability to perform repeatable and predictable deployments to one of the cloud pr
 (AWS/Azure).
 Verification
 The deployment can be verified by issuing a web request to http://{ip}:8080/success
-
-## Assumptions
-I've assumed that the application currently runs on a Kubernetes cluster.
-The app runs with 2 replica pods using a deployment manifest.
-Connectivity is established by a LoadBalancer Service, which creates a Load Balancer in the corresponding cloud setup.
 
 ## Solution
 This has been achieved using a combination of Docker, Jenkins and Helm. A pipeline has been configured to trigger on the push event in the Git repository.
