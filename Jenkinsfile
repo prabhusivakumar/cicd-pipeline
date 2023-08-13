@@ -5,32 +5,56 @@ def COLOR_MAP = [
 pipeline {
     agent any
 
+    environment {
+        registry = "prabhusiva619/cicd-pipeline"
+        registryCredential = 'dockerhub'
+    }
+
     stages{
 
-        stage('Fetch code') {
-          steps{
-              git branch: 'main', url:'https://github.com/prabhusivakumar/cicd-pipeline.git'
-          }  
-        }
-
-        stage('Build') {
+        stage('Build Artifact') {
             steps {
                 sh 'zip -r webapp.war *'
             }
             post {
                 success {
-                    echo "Successfully prepared artifact."
+                    echo 'Archiving artifacts'
+                    archiveArtifacts artifacts: '**/*.war'
                 }
             }
         }
 
-        stage("UploadArtifact"){
-	    steps {
-            	sshagent(['ubuntu']) {
-       			sh "scp -o  StrictHostKeyChecking=no target /webapp.war ubuntu@3.89.111.121:/usr/local/tomcat/webapps/ROOT.war"
-			}
+        stage('Build Docker Image') {
+          steps {
+            script {
+              dockerImage = docker.build registry + ":V$BUILD_NUMBER"
             }
-	}
+          }
+        }
+
+        stage('Push Docker Image'){
+          steps{
+            script {
+              docker.withRegistry('', registryCredential) {
+                dockerImage.push("V$BUILD_NUMBER")
+                dockerImage.push('latest')
+              }
+            }
+          }
+        }
+
+        stage('Remove unused docker image') {
+          steps{
+            sh "docker rmi $registry:V$BUILD_NUMBER"
+          }
+        }
+
+        stage('Deploy to Kubernetes') {
+          agent {label 'K8S'}
+            steps {
+              sh "helm upgrade --install --force cicd-stack helm/cicdcharts --set appimage=${registry}:V${BUILD_NUMBER} --namespace dev"
+            }
+        }
     }
 
     post {
