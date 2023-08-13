@@ -19,8 +19,18 @@ ability to perform repeatable and predictable deployments to one of the cloud pr
 Verification
 The deployment can be verified by issuing a web request to http://{ip}:8080/success
 
+## Assumptions
+I've assumed that the application currently runs on a Kubernetes cluster.
+The app runs with 2 replica pods using a deployment manifest.
+Connectivity is established by a LoadBalancer Service, which creates a Load Balancer in the corresponding cloud setup.
+
 ## Solution
-./problem_1
+This has been achieved using a combination of Docker, Jenkins and Helm. A pipeline has been configured to trigger on the push event in the Git repository.
+The pipeline eventually packages the latest code into an artifact called webapp.war, builds a docker image with the corresponding build number as tag.
+The docker image is then pushed into Docker Hub.
+Then switch context to the K8S agent which comes with helm installed.
+Finally use the helm upgrade command to upgrade the deployment with the current artifact tag.
+
 
 Problem 2
 ================
@@ -28,4 +38,7 @@ The application has been updated and the candidate is required to deploy a new v
 application and take into consideration that downtime should be minimized.
 
 ## Solution
-./problem_2
+Kubernetes supports rolling updates using which zero downtime can be achieved.
+I have set the number of replicas of the app to 2.
+As shown in the previous solution, helm updates the deployement manifest with the latest artifact tag and instructs Kubernetes to apply the same.
+When a rolling update is performed, the latest artifact is pushed as a fresh pod and the pods holding the previous artifact are gradually destroyed, resulting in zero downtime.
